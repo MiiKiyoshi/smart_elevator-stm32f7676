@@ -12,7 +12,6 @@ CFLAGS = -g -wall
 LDFLAGS = -lm
 	# -lm: 수학 라이브러리
 
-
 # ---------------------Making-----------------------#
 # all: 결론적으로 뭘 만들지
 all: $(TARGET)
