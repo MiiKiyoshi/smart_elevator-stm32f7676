@@ -8,6 +8,6 @@
 
 현재 열심히 제작중
 
-![flowchart](./description/flowchart.png){: width="50%" height="50%"}
+<img src="./description/flowchart.png" alt="flowchart" style="zoom: 25%;" />
 
-![module](./description/module.png){: width="50%" height="50%"}
+<img src="./description/module.png" alt="module" style="zoom:25%;" />
