@@ -12,5 +12,5 @@ typedef struct {
 
 HeapType* create();
 void init(HeapType* h);
-void insert_min_heap(HeapType* h, element* item);
+void insert_min_heap(HeapType* h, element item);
 element delete_min_heap(HeapType* h);

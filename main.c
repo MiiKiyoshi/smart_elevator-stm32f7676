@@ -8,6 +8,7 @@ int main(void){
 	HeapType* heap; 
 	heap = create(); 
 	init(heap);	
+
   
   for(int i=0; i<5; i++)
     el_call(heap);
