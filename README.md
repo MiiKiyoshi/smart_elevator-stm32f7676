@@ -8,6 +8,6 @@
 
 현재 열심히 제작중
 
-![flowchart](./description/flowchart.png)
+![flowchart](./description/flowchart.png){: width="50%" height="50%"}
 
-![module](./description/module.png)
+![module](./description/module.png){: width="50%" height="50%"}
