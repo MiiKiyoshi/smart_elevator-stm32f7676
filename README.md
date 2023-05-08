@@ -12,6 +12,8 @@
 
   http://www.ohm.co.kr/shop/shopdetail.html?branduid=27976
 
+* STM32 ST-LINK Utility
+
 ### 주의사항
 
 EUC_KR로 인코딩되어있음
