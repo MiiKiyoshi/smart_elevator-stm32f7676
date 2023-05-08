@@ -6,6 +6,16 @@
 
 현재 열심히 제작중
 
+### 필요한거
+
+* STM32F767 정복 책의 예제 파일내의 헤더파일
+
+  http://www.ohm.co.kr/shop/shopdetail.html?branduid=27976
+
+### 주의사항
+
+EUC_KR로 인코딩되어있음
+
 ## 설계도
 
 ### 함수
