@@ -134,7 +134,7 @@ subgraph 코드
 
 ### FLOW CHART
 
-<img src="./description/flowchart.png" alt="flowchart" style="zoom: 25%;" />
+<img src="./description/image/flowchart.png" alt="flowchart" style="zoom: 25%;" />
 
 ### PIN LAYOUT(계속 업데이트중)
 
@@ -166,8 +166,8 @@ subgraph 코드
 |  24  |        PD14         |                |                      |
 |  25  |        PD15         |                |                      |
 
-<img src="./image/CN3_CN4_LCD1.jpg" alt="CN3_CN4_LCD1" style="zoom:25%;" />
+<img src="./description/image/CN3_CN4_LCD1.jpg" alt="CN3_CN4_LCD1" style="zoom:25%;" />
 
 ### PIN LAYOUT (구)
 
-<img src="./description/module.png" alt="module" style="zoom:25%;" />
+<img src="./description/image/module.png" alt="module" style="zoom:25%;" />

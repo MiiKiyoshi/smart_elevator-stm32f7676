@@ -7,8 +7,8 @@
 |  5   |         PE2         |      PC13      |         GND          |
 |  6   |         PE1         |      PC12      |         PE5          |
 |  7   |         PE0         |      PC11      | **PD0** (ultra-trig) |
-|  8   |       3.3[V]        |      PC10      | **PD1** (ultra-echo) |
-|  9   |       3.3[V]        |      PB12      |         PD2          |
+|  8   |       3.3[V]        |      PC10      |         PD1          |
+|  9   |       3.3[V]        |      PB12      | **PD2** (ultra-echo) |
 |  10  |         PD0         |      PB15      |         PD3          |
 |  11  |         PD1         |      PB14      |  **PD4** (step-IN1)  |
 |  12  |         PD2         |      PB13      |  **PD5** (step-IN2)  |
