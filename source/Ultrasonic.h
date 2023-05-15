@@ -1,24 +1,17 @@
-//////////////////////////////////////////////////////////////////////////////////
-// Name: 공기정
-// Student: 60191792 / 전자공학과
-//
-// Class: 마이크로 프로세서 응용 
-// Professor: 김정국 교수님
-//
-// Create Date: 5/13
-// Project Name: Ultrasonic.h
-// Description: 초음파 센서 헤더파일
-//////////////////////////////////////////////////////////////////////////////////
+/*
+ * @Author: 공기정 
+ * @Date: 2023-05-15 22:25:25 
+ * @Last Modified by: 공기정
+ * @Last Modified time: 2023-05-15 22:53:26
+ */
 
 /***********************function prototype definition*************************/
 void Ulso_init(void);
-uint8_t Ulso_distance(void);
+double Ulso_distance(void);
+void accrate_Ulso(void);
 /*****************************************************************************/
 
-
-
 /*****************************************************************************/
-
 void Ulso_init(void){
   RCC->AHB1ENR |= 0x00000008;			  // port D clock enable (GPIODEN = 1)
   GPIOD->MODER &= ~(0x00000033);    // PD2 PD0 -> clear
@@ -42,7 +35,7 @@ void Ulso_init(void){
 
 /*****************************************************************************/
 
-uint8_t Ulso_distance(void)
+double Ulso_distance(void)
 {
 	// 트리거 핀으로 펄스 출력
 	GPIOD->BSRR = 0x00010000;	// LOW 값 출력
@@ -67,7 +60,21 @@ uint8_t Ulso_distance(void)
 
 	// 에코 핀의 펄스 폭 (음파가 왕복한 시간) 계산
 	double time = TIM7->CNT * 0.000064;
-	return (int)(time * 340.0/2.0*100.0);		// 센티미터 단위 거리 반환
+	return time * 340.0/2.0*100.0;		// 센티미터 단위 거리 반환
 }
 
 /*****************************************************************************/
+
+//이동 평균 필터
+void accrate_Ulso(void)
+{
+	total = total - readings[readindex]; //가장 오래된 data를 합계에서 빼서 없앤다.
+	readings[readindex] = ulso_distance; //센서입력값을 배열에 저장
+	total = total + readings[readindex]; //읽은 값을 합계에 더한다.
+	readindex++;						 //신호값을 읽은 인덱스를 1 증가 시킨다.
+
+	if(readindex >= numReadings) readindex = 0; 
+	//만약 신호를 읽는 인덱스의 값이 평균갯수보다 커지면 0으로 만들어 처음부터 다시 시작한다.
+	
+	ulso_accu_distance = total / numReadings; //평균값을 구한다.
+}

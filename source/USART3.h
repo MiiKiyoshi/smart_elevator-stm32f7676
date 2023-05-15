@@ -1,14 +1,9 @@
-//////////////////////////////////////////////////////////////////////////////////
-// Name: 공기정
-// Student: 60191792 / 전자공학과
-//
-// Class: 마이크로 프로세서 응용 
-// Professor: 김정국 교수님
-//
-// Create Date: 5/13
-// Project Name: USART3.h
-// Description: USART3, 블루투스 통신을 위한 헤더파일
-//////////////////////////////////////////////////////////////////////////////////
+/*
+ * @Author: 공기정 
+ * @Date: 2023-05-15 22:25:12 
+ * @Last Modified by:   공기정 
+ * @Last Modified time: 2023-05-15 22:25:12 
+ */
 
 /***********************function prototype definition*************************/
 void USART3_IRQHandler(void);         /* USART3 interrupt function */

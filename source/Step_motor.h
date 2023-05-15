@@ -1,23 +1,16 @@
-//////////////////////////////////////////////////////////////////////////////////
-// Name: 공기정
-// Student: 60191792 / 전자공학과
-//
-// Class: 마이크로 프로세서 응용 
-// Professor: 김정국 교수님
-//
-// Create Date: 5/13
-// Project Name: step_motor.h
-// Description: 스텝모터 제어 
-//////////////////////////////////////////////////////////////////////////////////
+/*
+ * @Author: 공기정 
+ * @Date: 2023-05-15 22:24:51 
+ * @Last Modified by: 공기정
+ * @Last Modified time: 2023-05-15 22:38:34
+ */
 
-void stepmotor_init(void);
-unsigned char stepForward(void);			// 시계방향 회전
-unsigned char stepBackward(void);		// 반시계방향 회전
-
-// 1상 여자 방식의 구동 데이터
-unsigned char step_data[4] = {0x00000010, 0x00000020, 0x00000040, 0x00000080};
-// 구동 데이터를 위한 인덱스 
-int step_index = -1;
+#define PI 3.141592
+#define RADIUS 1.2
+#define UNIT_ANGLE 720
+#define FLOOR2FLOOR 15
+#define GROUND_OFFSET 3 // 초음파센서를 위한거
+#define CEILING_OFFSET 5 // 모터가 위아래로 이동시키는 관점에서의 엘레베이터의 높이를 구하기 위한 변수
 
 void stepmotor_init(void){
   RCC->AHB1ENR |= 0x00000008;			// port D clock enable
@@ -48,4 +41,68 @@ unsigned char stepBackward(void)		// 반시계방향 회전
 	if(step_index < 0) step_index = 3;
 	
 	return step_data[step_index];
+}
+
+void Forward(double angle){
+  steps = (int) round((2100/360) * angle);
+
+  init_motor_flag = 0;
+  EL_operation_flag = 1;
+
+  Backward_flag = 0;
+  Forward_flag = 1;
+}
+
+void Backward(double angle){
+  steps = (int) round((2100/360) * angle);
+
+  init_motor_flag = 0;
+  EL_operation_flag = 1;
+
+  Forward_flag = 0;
+  Backward_flag = 1;
+}
+
+void move_EL(int dest_floor){
+  int dest_angle = (4 - dest_floor) * UNIT_ANGLE;
+  int curr_angle = (4 - curr_floor) * UNIT_ANGLE;
+
+  if(curr_angle > dest_angle){
+    Backward((double)(curr_angle - dest_angle));
+  }
+  else if(dest_angle > curr_angle){
+    Forward((double)(dest_angle - curr_angle));
+  }
+
+  if(Feedback_flag){
+    feedback_EL();
+    feedback_EL();
+    feedback_EL();
+  }
+
+  while(steps != 0);
+  curr_angle = dest_angle;
+}
+
+void feedback_EL(void){
+  double real_height;
+  double angle;
+
+  if(Ulso_accuracy_flag)
+    real_height = ulso_accu_distance;
+  else
+    real_height = ulso_distance;
+
+  int ideal_height = GROUND_OFFSET + FLOOR2FLOOR * (curr_floor - 1);
+
+  if(real_height > ideal_height){
+    angle = 360 * (real_height - ideal_height) / (2 * PI * RADIUS);
+    Forward(angle);
+  }
+  else if(ideal_height > real_height){
+    angle = 360 * (ideal_height - real_height) / (2 * PI * RADIUS);
+    Backward(angle);
+  }
+
+  while(steps != 0);
 }

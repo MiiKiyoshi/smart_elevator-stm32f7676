@@ -1,8 +1,19 @@
-#include "stm32f767xx.h"
-#include <stdio.h>
+/*
+ * @Author: 공기정 
+ * @Date: 2023-05-15 22:22:20 
+ * @Last Modified by: 공기정
+ * @Last Modified time: 2023-05-15 22:49:29
+ */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include "stm32f767xx.h"
 #include "Essential.h"
+#include "Global_variables.h"
 #include "Step_motor.h"
+#include "heap.h"
 #include "Ultrasonic.h"
 #include "USART3.h"
 
@@ -12,13 +23,6 @@ void EXTI1_IRQHandler(void);			/* EXTI1 interrupt function */
 void EXTI2_IRQHandler(void);			/* EXTI2 interrupt function */
 void EXTI3_IRQHandler(void);			/* EXTI3 interrupt function */
 void TIM2_IRQHandler(void);			/* TIM2 interrupt function (5ms) */
-
-
-U08 stop_elevator = 1, init_motor_flag = 1; // 엘레베이터 정지, 모터 초기화모드로 시작
-U08 EL_operation_flag, Forward_flag, Backward_flag, steps;
-
-char value_str[100] = {0};
-uint8_t value_int;
 
 /****************************엘레베이터 호출 시스템*********************************/
 void USART3_IRQHandler(void)          /* USART3 interrupt function */
@@ -31,12 +35,40 @@ void USART3_IRQHandler(void)          /* USART3 interrupt function */
       switch(RXD){
         case '1':
           TX3_string("\r\nthe first floor\r\n\r\n");
+          el_call(heap, 1);
           break;
         case '2': 
           TX3_string("\r\nthe second floor\r\n\r\n");
+          el_call(heap, 2);
           break;
         case '3': 
           TX3_string("\r\nthe third floor\r\n\r\n");
+          el_call(heap, 3);
+          break;
+        case '4':
+          TX3_string("\r\nthe fourth floor\r\n\r\n");
+          el_call(heap, 4);
+          break;
+        case 'f':
+          Feedback_flag = (Feedback_flag + 1) % 2;
+          if(Feedback_flag)
+            TX3_string("\r\nfeedback ON\r\n\r\n");
+          else
+            TX3_string("\r\nfeedback OFF\r\n\r\n");
+          break;
+        case 'u':
+          Ulso_print_flag = (Ulso_print_flag + 1) % 2;
+          if(Ulso_print_flag)
+            TX3_string("\r\nultrasonic value print ON\r\n\r\n");
+          else
+            TX3_string("\r\nultrasonic value print OFF\r\n\r\n");
+          break;
+        case 'a':
+          Ulso_accuracy_flag = (Ulso_accuracy_flag + 1) % 2;
+          if(Ulso_accuracy_flag)
+            TX3_string("\r\nultrasonic accurate mode ON\r\n\r\n");
+          else
+            TX3_string("\r\nultrasonic accurate mode OFF\r\n\r\n");
           break;
         default:
           TX3_string("\r\n***********************\r\n");
@@ -44,18 +76,31 @@ void USART3_IRQHandler(void)          /* USART3 interrupt function */
           TX3_string("key 1: the first floor\r\n");
           TX3_string("key 2: the second floor\r\n");
           TX3_string("key 3: the third floor\r\n");
+          TX3_string("key 4: the fourth floor\r\n");
+          TX3_string("key f: feedback on/off\r\n");
+          TX3_string("key u: ultrasonic value print ON/OFF");
+          TX3_string("key a: ultrasonic accurate mode ON/OFF");
           TX3_string("***********************\r\n\r\n");
       }
     }
   }
 }
-/*******************************초음파 센서값 출력**********************************/
-
+/*******************************초음파 센서값 업데이트********************************/
 void TIM3_IRQHandler(void){			/* TIM3 interrupt function (1s)*/
+  char str[100] = {0};
   TIM3->SR = 0x0000;
-  value_int = Ulso_distance();
-  sprintf(value_str, "Distance : %d [cm]\r\n", value_int);
-  TX3_string((U08*)value_str);
+  ulso_distance = Ulso_distance();
+
+  if(Ulso_accuracy_flag) accrate_Ulso();
+
+  if(Ulso_print_flag){
+    sprintf(str, "Distance : %lf [cm]\r\n", ulso_distance);
+    TX3_string((U08*)str);
+    if(Ulso_accuracy_flag){
+      sprintf(str, "Accurate distance : %lf [cm]\r\n", ulso_accu_distance);
+      TX3_string((U08*)str);
+    }
+  }
 }
 
 /*******************************엘레베이터 버튼**************************************/
@@ -64,6 +109,7 @@ void EXTI0_IRQHandler(void)			/* EXTI0 interrupt function */
 {
   stop_elevator = (stop_elevator + 1) % 2;
   GPIOD->ODR &= ~(0x000000F0);
+  TX3_string("\r\nElevator stops\r\n\r\n");
 
   while((GPIOC->IDR & 0x00000001) != 0x00000001); 
   Delay_ms(20);
@@ -77,7 +123,14 @@ void EXTI1_IRQHandler(void)			/* EXTI1 interrupt function */
 {
   init_motor_flag = (init_motor_flag + 1) % 2;
   EL_operation_flag = (EL_operation_flag + 1) % 2;
+  Forward_flag = 0, Backward_flag = 0;
   GPIOD->ODR &= ~(0x000000F0);
+
+  if(init_motor_flag)
+    TX3_string("\r\nMotor initialization mode\r\n\r\n");
+
+  if(EL_operation_flag)
+    TX3_string("\r\nElevator operation mode\r\n\r\n");
 
   while((GPIOC->IDR & 0x00000002) != 0x00000002); // debouncing
   Delay_ms(20);
@@ -88,8 +141,9 @@ void EXTI1_IRQHandler(void)			/* EXTI1 interrupt function */
 // 엘레베이터 하강 (모터 초기화 모드)
 void EXTI2_IRQHandler(void)			/* EXTI2 interrupt function */
 {
-  Backward_flag = (Backward_flag + 1) % 2;
-  Forward_flag = 0;
+  Forward_flag = (Forward_flag + 1) % 2;
+  Backward_flag = 0;
+  TX3_string("\r\nElevator down\r\n\r\n");
   while((GPIOC->IDR & 0x00000004) != 0x00000004); // debouncing
   Delay_ms(20);
   EXTI->PR = 0x00000004;			// clear pending bit of EXTI2
@@ -99,8 +153,9 @@ void EXTI2_IRQHandler(void)			/* EXTI2 interrupt function */
 // 엘레베이터 상승 (모터 초기화 모드)
 void EXTI3_IRQHandler(void)			/* EXTI3 interrupt function */
 {
-  Forward_flag = (Forward_flag + 1) % 2;
-  Backward_flag = 0;
+  Backward_flag = (Backward_flag + 1) % 2;
+  Forward_flag = 0;
+  TX3_string("\r\nElevator up\r\n\r\n");
   while((GPIOC->IDR & 0x00000008) != 0x00000008); // debouncing
   Delay_ms(20);
   EXTI->PR = 0x00000008;			// clear pending bit of EXTI3
@@ -143,6 +198,11 @@ void TIM2_IRQHandler(void){			/* TIM2 interrupt function (5ms)*/
         if(steps > 0) steps--;
       }
     }
+
+    if(init_motor_flag == EL_operation_flag){
+      init_motor_flag = 1;
+      EL_operation_flag = 0;
+    }
   }
 }
 /**********************************************************************************/
@@ -150,12 +210,20 @@ void TIM2_IRQHandler(void){			/* TIM2 interrupt function (5ms)*/
 int main(void){
 
   Initialize_MCU();
+
+	// 히프 생성
+	heap = create(); 
+	init(heap);	
+
   KEY_init();
   USART3_init();
   Ulso_init();
   stepmotor_init();
 
   while(1){
-    
+    if((steps == 0) && EL_operation_flag && !init_motor_flag){
+      Delay_ms(2000);
+      move_EL(el_run(heap));
+    }
   }
 }
