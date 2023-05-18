@@ -27,16 +27,14 @@ void stepmotor_init(void){
   NVIC->ISER[0] |= 0x10000000; // TIM2 interupt enable
 }
 
-unsigned char stepForward(void)			// 시계방향 회전
-{
+unsigned char stepForward(void){			// 시계방향 회전
 	step_index++;
 	if(step_index >= 4) step_index = 0;
 
 	return step_data[step_index];
 }
 
-unsigned char stepBackward(void)		// 반시계방향 회전
-{
+unsigned char stepBackward(void){		// 반시계방향 회전
 	step_index--;
 	if(step_index < 0) step_index = 3;
 	
@@ -45,6 +43,7 @@ unsigned char stepBackward(void)		// 반시계방향 회전
 
 void Forward(double angle){
   steps = (int) round((2100/360) * angle);
+  //operating_flag = 1;
 
   init_motor_flag = 0;
   EL_operation_flag = 1;
@@ -55,6 +54,7 @@ void Forward(double angle){
 
 void Backward(double angle){
   steps = (int) round((2100/360) * angle);
+  //operating_flag = 1;
 
   init_motor_flag = 0;
   EL_operation_flag = 1;
@@ -64,15 +64,21 @@ void Backward(double angle){
 }
 
 void move_EL(int dest_floor){
+  char str[100] = {0};
   int dest_angle = (4 - dest_floor) * UNIT_ANGLE;
   int curr_angle = (4 - curr_floor) * UNIT_ANGLE;
 
   if(curr_angle > dest_angle){
     Backward((double)(curr_angle - dest_angle));
+    sprintf(str, "going to %d\r\n", dest_floor);
+    TX3_string((U08*)str);
   }
   else if(dest_angle > curr_angle){
     Forward((double)(dest_angle - curr_angle));
+    sprintf(str, "going to %d\r\n", dest_floor);
+    TX3_string((U08*)str);
   }
+  else return;
 
   if(Feedback_flag){
     feedback_EL();
@@ -80,8 +86,7 @@ void move_EL(int dest_floor){
     feedback_EL();
   }
 
-  while(steps != 0);
-  curr_angle = dest_angle;
+  curr_floor = dest_floor;
 }
 
 void feedback_EL(void){

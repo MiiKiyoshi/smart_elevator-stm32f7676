@@ -15,6 +15,7 @@ void insert_min_heap(HeapType* h, element item);
 element delete_min_heap(HeapType* h);
 /*****************************************************************************/
 
+int heap_num;
 /*****************************************************************************/
 void el_call(HeapType* heap, int dest_floor){
   element call;
@@ -30,13 +31,18 @@ void el_call(HeapType* heap, int dest_floor){
   }
 
   insert_min_heap(heap, call);
+  heap_num++;
 }
 
 int el_run(HeapType* heap){
-
-  element call = delete_min_heap(heap);
-
-  return call.floor;
+  
+  if(heap_num != 0){
+    element call = delete_min_heap(heap);
+    heap_num--;
+    return call.floor;
+  }
+  
+  return curr_floor;
 }
 
 // 생성 함수
@@ -48,7 +54,8 @@ HeapType* create()
 // 초기화 함수
 void init(HeapType* h)
 {
-	h->heap_size = 0;
+    memset(h, 0, sizeof(HeapType));
+    h->heap_size = 0;
 }
 // 현재 요소의 개수가 heap_size인 히프 h에 item을 삽입한다.
 
@@ -71,7 +78,6 @@ element delete_min_heap(HeapType* h)
 {
 	int parent, child;
 	element item, temp;
-
 	item = h->heap[1];
 	temp = h->heap[(h->heap_size)--];
 	parent = 1;
@@ -88,5 +94,6 @@ element delete_min_heap(HeapType* h)
 		child *= 2;
 	}
 	h->heap[parent] = temp;
-	return item;
+        
+        return item;
 }

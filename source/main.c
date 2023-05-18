@@ -8,14 +8,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 #include "stm32f767xx.h"
 #include "Essential.h"
 #include "Global_variables.h"
+#include "USART3.h"
 #include "Step_motor.h"
 #include "heap.h"
 #include "Ultrasonic.h"
-#include "USART3.h"
 
 void USART3_IRQHandler(void);         /* USART3 interrupt function */
 void EXTI0_IRQHandler(void);			/* EXTI0 interrupt function */
@@ -71,36 +72,42 @@ void USART3_IRQHandler(void)          /* USART3 interrupt function */
             TX3_string("\r\nultrasonic accurate mode OFF\r\n\r\n");
           break;
         default:
-          TX3_string("\r\n***********************\r\n");
+          TX3_string("\r\n***********************************\r\n");
           TX3_string("Press the following key\r\n");
           TX3_string("key 1: the first floor\r\n");
           TX3_string("key 2: the second floor\r\n");
           TX3_string("key 3: the third floor\r\n");
           TX3_string("key 4: the fourth floor\r\n");
           TX3_string("key f: feedback on/off\r\n");
-          TX3_string("key u: ultrasonic value print ON/OFF");
-          TX3_string("key a: ultrasonic accurate mode ON/OFF");
-          TX3_string("***********************\r\n\r\n");
+          TX3_string("key u: ultrasonic value print ON/OFF\r\n");
+          TX3_string("key a: ultrasonic accurate mode ON/OFF\r\n");
+          TX3_string("***********************************\r\n\r\n");
       }
     }
   }
 }
 /*******************************초음파 센서값 업데이트********************************/
-void TIM3_IRQHandler(void){			/* TIM3 interrupt function (1s)*/
-  char str[100] = {0};
+void TIM3_IRQHandler(void){			/* TIM3 interrupt function (0.1s)*/
   TIM3->SR = 0x0000;
+  
+  char str[100] = {0};
   ulso_distance = Ulso_distance();
 
   if(Ulso_accuracy_flag) accrate_Ulso();
 
-  if(Ulso_print_flag){
-    sprintf(str, "Distance : %lf [cm]\r\n", ulso_distance);
-    TX3_string((U08*)str);
-    if(Ulso_accuracy_flag){
-      sprintf(str, "Accurate distance : %lf [cm]\r\n", ulso_accu_distance);
+  if(Ulso_print > 9){
+    if(Ulso_print_flag){
+      sprintf(str, "Distance : %lf [cm]\r\n", ulso_distance);
       TX3_string((U08*)str);
+      if(Ulso_accuracy_flag){
+        sprintf(str, "Accurate distance : %lf [cm]\r\n", ulso_accu_distance);
+        TX3_string((U08*)str);
+      }
+      Ulso_print = 0;
     }
   }
+  
+  Ulso_print++;
 }
 
 /*******************************엘레베이터 버튼**************************************/
@@ -109,7 +116,8 @@ void EXTI0_IRQHandler(void)			/* EXTI0 interrupt function */
 {
   stop_elevator = (stop_elevator + 1) % 2;
   GPIOD->ODR &= ~(0x000000F0);
-  TX3_string("\r\nElevator stops\r\n\r\n");
+  if(stop_elevator) TX3_string("\r\nElevator stops\r\n\r\n");
+  else TX3_string("\r\nElevator starts\r\n\r\n");
 
   while((GPIOC->IDR & 0x00000001) != 0x00000001); 
   Delay_ms(20);
@@ -128,8 +136,7 @@ void EXTI1_IRQHandler(void)			/* EXTI1 interrupt function */
 
   if(init_motor_flag)
     TX3_string("\r\nMotor initialization mode\r\n\r\n");
-
-  if(EL_operation_flag)
+  else
     TX3_string("\r\nElevator operation mode\r\n\r\n");
 
   while((GPIOC->IDR & 0x00000002) != 0x00000002); // debouncing
@@ -205,25 +212,59 @@ void TIM2_IRQHandler(void){			/* TIM2 interrupt function (5ms)*/
     }
   }
 }
+
+/******************************엘레베이터 호출 시스템**********************************/
+int tim_el_call_num;
+U08 can_start;
+
+void TIM4_IRQHandler(void){
+  TIM4->SR = 0x0000;				// clear pending bit of TIM2 interrupt
+
+    if(steps==0){
+      tim_el_call_num++;
+    }
+
+    if (tim_el_call_num > 9){
+      can_start = 1;
+      tim_el_call_num = 0;
+    }
+
+    if(can_start){
+      can_start = 0;
+      move_EL(el_run(heap));
+    }
+
+}
+
 /**********************************************************************************/
 
 int main(void){
 
   Initialize_MCU();
 
-	// 히프 생성
-	heap = create(); 
-	init(heap);	
+  // 히프 생성
+  heap = create(); 
+  init(heap);	
 
   KEY_init();
   USART3_init();
   Ulso_init();
   stepmotor_init();
-
-  while(1){
-    if((steps == 0) && EL_operation_flag && !init_motor_flag){
-      Delay_ms(2000);
-      move_EL(el_run(heap));
-    }
-  }
+  
+  RCC->APB1ENR |= 0x00000010;			// enable TIM6 clock
+  TIM6->PSC = 53999;				// 54Mhz/(53999+1) = 1kHz
+  TIM6->CNT = 0;				// clear counter
+  TIM6->CR1 = 0x0001;				// enable TIM6
+  
+  RCC->APB1ENR |= 0x00000004; // TIM4 clock enable
+  TIM4->PSC = 10799;				// 108MHz/(10799+1) = 10kHz
+  TIM4->ARR = 9999;				// 10kHz/(9999+1) = 1Hz (1s)
+  TIM4->CNT = 0;				// clear counter
+  TIM4->DIER = 0x0001;				// enable update interrupt
+  TIM4->CR1 = 0x0005;				// enable TIM4 and update event
+  
+  NVIC->ISER[0] |= 0x40000000; // TIM4 interupt enable
+  
+  while(1);
+  
 }

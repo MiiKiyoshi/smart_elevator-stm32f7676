@@ -102,7 +102,7 @@ void Beep(void)					/* beep for 50 ms */
 /*****************************************************************************/
 
 void KEY_init(void){
-  GPIOC->MODER &= ~(0x0000000F);			// PC0 PC1 PC2 PC3 -> input
+  GPIOC->MODER &= ~(0x000000FF);			// PC0 PC1 PC2 PC3 -> input
 
   SYSCFG->EXTICR[0] = 0x00002222;		// EXTI3,2,1,0 = PC3,2,1,0(KEY4,3,2,1)
   EXTI->IMR = 0x0000000F;			// enable EXTI3,2,1,0 interrupt

@@ -25,7 +25,7 @@ void Ulso_init(void){
 
   RCC->APB1ENR |= 0x00000002; // TIM3 clock enable
   TIM3->PSC = 10799;				// 108MHz/(10799+1) = 10kHz
-  TIM3->ARR = 9999;				// 10kHz/(9999+1) = 1Hz (1s)
+  TIM3->ARR = 999;				// 10kHz/(999+1) = 10Hz (0.1s)
   TIM3->CNT = 0;				// clear counter
   TIM3->DIER = 0x0001;				// enable update interrupt
   TIM3->CR1 = 0x0005;				// enable TIM3 and update event

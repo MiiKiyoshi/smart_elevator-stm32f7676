@@ -1,8 +1,8 @@
 //스텝모터
 U08 stop_elevator = 1, init_motor_flag = 1; // 엘레베이터 정지, 모터 초기화모드로 시작
-U08 EL_operation_flag, Forward_flag, Backward_flag, Feedback_flag;
-int steps;
-int curr_floor;
+U08 EL_operation_flag, Forward_flag, Backward_flag, Feedback_flag, operating_flag;
+int steps = 0;
+int curr_floor = 4;
 
 void stepmotor_init(void);
 unsigned char stepForward(void);			// 시계방향 회전
@@ -36,6 +36,7 @@ HeapType* heap;
 #define numReadings 10
 
 U08 Ulso_print_flag, Ulso_accuracy_flag;
+int Ulso_print;
 double ulso_distance;
 
 double readings[numReadings];
