@@ -4,7 +4,9 @@
 
 > 마이크로프로세서 응용 (2023-1) 2조 Smart Raise 팀 
 
-현재 열심히 제작중
+![the art](.\description\the art.gif)
+
+현재 열심히 초음파로 피드백하는거 만드는중
 
 ### 필요한거
 
@@ -64,9 +66,6 @@ flowchart LR
 			I_a(UART 입력)
 			I_b(UART 출력)
 		end	
-		subgraph H[RFID 모듈]
-			H_a(RFID 카드 인식)
-		end	
 		subgraph G[초음파 센서]
 			G_a(엘레베이터와의 거리 측정)
 		end	
@@ -117,9 +116,6 @@ flowchart LR
 	%%피드백 시스템%%
 	E_b ---|층수의 고도| E_c 
 	
-	%%RFID 모듈%%
-	H_a -->|허가받은 층| E_b
-	
 	%%작동 정지 및 버저 작동%%
 	E_c -->|3회 실패시| E_d
 	
@@ -152,7 +148,7 @@ subgraph 코드
 		direction TB
 		subgraph B[main]
 			subgraph B_A[초기화]
-				G_a(스텝 모터,RFID 모듈,무게 센서,온도 센서,쿨러,초음파 센서,버저)
+				G_a(스텝 모터,RFID 모듈,초음파 센서)
 			end
 			subgraph B_B[while문]
 				B_B_a(층수 입력받기)
