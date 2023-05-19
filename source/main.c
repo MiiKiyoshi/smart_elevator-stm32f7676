@@ -2,7 +2,7 @@
  * @Author: 공기정 
  * @Date: 2023-05-15 22:22:20 
  * @Last Modified by: 공기정
- * @Last Modified time: 2023-05-15 22:49:29
+ * @Last Modified time: 2023-05-19 09:49:40
  */
 
 #include <stdio.h>
@@ -19,11 +19,13 @@
 #include "Ultrasonic.h"
 
 void USART3_IRQHandler(void);         /* USART3 interrupt function */
+void TIM3_IRQHandler(void);			/* TIM3 interrupt function (0.1s)*/
 void EXTI0_IRQHandler(void);			/* EXTI0 interrupt function */
 void EXTI1_IRQHandler(void);			/* EXTI1 interrupt function */
 void EXTI2_IRQHandler(void);			/* EXTI2 interrupt function */
 void EXTI3_IRQHandler(void);			/* EXTI3 interrupt function */
 void TIM2_IRQHandler(void);			/* TIM2 interrupt function (5ms) */
+void TIM4_IRQHandler(void);     /* TIM4 interrupt function (1s) */
 
 /****************************엘레베이터 호출 시스템*********************************/
 void USART3_IRQHandler(void)          /* USART3 interrupt function */
@@ -168,8 +170,6 @@ void EXTI3_IRQHandler(void)			/* EXTI3 interrupt function */
   EXTI->PR = 0x00000008;			// clear pending bit of EXTI3
   NVIC->ICPR[0] = 0x00000200;			// clear pending bit of (9)EXTI3
 }
-/**********************************************************************************/
-
 
 /******************************엘레베이터 작동 시스템**********************************/
 void TIM2_IRQHandler(void){			/* TIM2 interrupt function (5ms)*/
@@ -213,7 +213,7 @@ void TIM2_IRQHandler(void){			/* TIM2 interrupt function (5ms)*/
   }
 }
 
-/******************************엘레베이터 호출 시스템**********************************/
+/****************************엘레베이터 내부 호출 시스템********************************/
 int tim_el_call_num;
 U08 can_start;
 
@@ -250,20 +250,7 @@ int main(void){
   USART3_init();
   Ulso_init();
   stepmotor_init();
-  
-  RCC->APB1ENR |= 0x00000010;			// enable TIM6 clock
-  TIM6->PSC = 53999;				// 54Mhz/(53999+1) = 1kHz
-  TIM6->CNT = 0;				// clear counter
-  TIM6->CR1 = 0x0001;				// enable TIM6
-  
-  RCC->APB1ENR |= 0x00000004; // TIM4 clock enable
-  TIM4->PSC = 10799;				// 108MHz/(10799+1) = 10kHz
-  TIM4->ARR = 9999;				// 10kHz/(9999+1) = 1Hz (1s)
-  TIM4->CNT = 0;				// clear counter
-  TIM4->DIER = 0x0001;				// enable update interrupt
-  TIM4->CR1 = 0x0005;				// enable TIM4 and update event
-  
-  NVIC->ISER[0] |= 0x40000000; // TIM4 interupt enable
+  el_call_sys_init();
   
   while(1);
   

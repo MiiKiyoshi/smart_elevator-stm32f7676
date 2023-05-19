@@ -1,10 +1,9 @@
 /*
  * @Author: 공기정 
- * @Date: 2023-05-15 22:24:38 
- * @Last Modified by: 공기정
- * @Last Modified time: 2023-05-15 22:24:58
+ * @Date: 2023-05-19 09:45:57 
+ * @Last Modified by:   공기정 
+ * @Last Modified time: 2023-05-19 09:45:57 
  */
-
 
 /***********************function prototype definition*************************/
 void el_call(HeapType* heap, int dest_floor);
@@ -17,6 +16,22 @@ element delete_min_heap(HeapType* h);
 
 int heap_num;
 /*****************************************************************************/
+void el_call_sys_init(){
+ // RCC->APB1ENR |= 0x00000010;			// enable TIM6 clock
+ // TIM6->PSC = 53999;				// 54Mhz/(53999+1) = 1kHz
+ // TIM6->CNT = 0;				// clear counter
+ // TIM6->CR1 = 0x0001;				// enable TIM6
+  
+  RCC->APB1ENR |= 0x00000004; // TIM4 clock enable
+  TIM4->PSC = 10799;				// 108MHz/(10799+1) = 10kHz
+  TIM4->ARR = 9999;				// 10kHz/(9999+1) = 1Hz (1s)
+  TIM4->CNT = 0;				// clear counter
+  TIM4->DIER = 0x0001;				// enable update interrupt
+  TIM4->CR1 = 0x0005;				// enable TIM4 and update event
+  
+  NVIC->ISER[0] |= 0x40000000; // TIM4 interupt enable
+}
+
 void el_call(HeapType* heap, int dest_floor){
   element call;
 
