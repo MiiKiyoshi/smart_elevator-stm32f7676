@@ -4,7 +4,7 @@
 
 > 마이크로프로세서 응용 (2023-1) 2조 Smart Raise 팀 
 
-![the art](.\description\the art.gif)
+![the art](https://user-images.githubusercontent.com/121929511/239415448-8a39d0a1-36a8-4f10-b830-5be6ff8bd272.gif)
 
 현재 열심히 초음파로 피드백하는거 만드는중
 
