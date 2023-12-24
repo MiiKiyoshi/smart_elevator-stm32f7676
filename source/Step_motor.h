@@ -5,6 +5,7 @@
  * @Last Modified time: 2023-05-15 22:38:34
  */
 
+#define ANGLE2STEPS 1950
 #define PI 3.141592
 #define RADIUS 1.2
 #define UNIT_ANGLE 720
@@ -42,7 +43,7 @@ unsigned char stepBackward(void){		// 반시계방향 회전
 }
 
 void Forward(double angle){
-  steps = (int) round((2100/360) * angle);
+  steps = (int) round((ANGLE2STEPS/360) * angle);
   //operating_flag = 1;
 
   init_motor_flag = 0;
@@ -53,7 +54,7 @@ void Forward(double angle){
 }
 
 void Backward(double angle){
-  steps = (int) round((2100/360) * angle);
+  steps = (int) round((ANGLE2STEPS/360) * angle);
   //operating_flag = 1;
 
   init_motor_flag = 0;
@@ -80,12 +81,6 @@ void move_EL(int dest_floor){
   }
   else return;
 
-  if(Feedback_flag){
-    feedback_EL();
-    feedback_EL();
-    feedback_EL();
-  }
-
   curr_floor = dest_floor;
 }
 
@@ -108,6 +103,4 @@ void feedback_EL(void){
     angle = 360 * (ideal_height - real_height) / (2 * PI * RADIUS);
     Backward(angle);
   }
-
-  while(steps != 0);
 }

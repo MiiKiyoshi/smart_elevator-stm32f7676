@@ -93,8 +93,7 @@ void TIM3_IRQHandler(void){			/* TIM3 interrupt function (0.1s)*/
   TIM3->SR = 0x0000;
   
   char str[100] = {0};
-  ulso_distance = Ulso_distance();
-
+  ulso_distance = 0.532 * Ulso_distance() + 1.19; //오차 조절
   if(Ulso_accuracy_flag) accrate_Ulso();
 
   if(Ulso_print > 9){
@@ -216,12 +215,71 @@ void TIM2_IRQHandler(void){			/* TIM2 interrupt function (5ms)*/
 /****************************엘레베이터 내부 호출 시스템********************************/
 int tim_el_call_num;
 U08 can_start;
+U08 blink = 0;
 
 void TIM4_IRQHandler(void){
-  TIM4->SR = 0x0000;				// clear pending bit of TIM2 interrupt
-
+  int i;
+  TIM4->SR = 0x0000;	// clear pending bit of TIM2 interrupt
+  
     if(steps==0){
       tim_el_call_num++;
+      switch(curr_floor){
+        case 4:
+          GPIOC->ODR &= ~(0x00003C00); 
+          GPIOC->ODR |= 0x00002000;	
+          break;
+        case 3:
+          GPIOC->ODR &= ~(0x00003C00); 
+          GPIOC->ODR |= 0x00001000;	
+          break;
+        case 2:
+          GPIOC->ODR &= ~(0x00003C00); 
+          GPIOC->ODR |= 0x00000800;	
+          break;
+        case 1:
+          GPIOC->ODR &= ~(0x00003C00); 
+          GPIOC->ODR |= 0x00000400;	
+          break;
+      }
+    }
+    else{
+      switch(curr_floor){
+        case 4:
+          GPIOC->ODR &= ~(0x00003C00); 
+          if(blink){
+            GPIOC->ODR |= 0x00002000;	
+          }
+          break;
+        case 3:
+          GPIOC->ODR &= ~(0x00003C00); 
+          if(blink){
+            GPIOC->ODR |= 0x00001000;	
+          }
+          break;
+        case 2:
+          GPIOC->ODR &= ~(0x00003C00); 
+          if(blink){
+            GPIOC->ODR |= 0x00000800;	
+          }
+          break;
+        case 1:
+          GPIOC->ODR &= ~(0x00003C00); 
+          if(blink){
+            GPIOC->ODR |= 0x00000400;	
+          }
+          break;
+      }
+      blink = (blink + 1) % 2;
+    }
+
+    if(Feedback_flag){
+      if(tim_el_call_num == 2){
+        feedback_EL();
+      }
+      
+      if (tim_el_call_num == 5){
+        feedback_EL();
+      }
     }
 
     if (tim_el_call_num > 9){
@@ -251,6 +309,12 @@ int main(void){
   Ulso_init();
   stepmotor_init();
   el_call_sys_init();
+
+  GPIOC->MODER &= ~(0x0FF00000);
+  GPIOC->MODER |= 0x05500000;
+  GPIOC->ODR &= ~(0x00003C00); 
+  
+  TX3_string("The elevator made by team2\r\n");
   
   while(1);
   
